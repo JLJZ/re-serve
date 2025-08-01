@@ -1,0 +1,28 @@
+{
+  "name": "re-serve",
+  "version": "1.0.0",
+  "description": "An enhanced facility booking system.",
+  "homepage": "https://github.com/JLJZ/re-serve#readme",
+  "bugs": {
+    "url": "https://github.com/JLJZ/re-serve/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JLJZ/re-serve.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "passport-http": "^0.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
