@@ -1,0 +1,9 @@
+/* Custom styles for the time indicator */
+.rbc-current-time-indicator {
+  background-color: #EF4444 !important; /* red-500 */
+  height: 2px !important;
+  z-index: 10 !important;
+  position: absolute;
+  right: 0;
+  left: 0;
+}

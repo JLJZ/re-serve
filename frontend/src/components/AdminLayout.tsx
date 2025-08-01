@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboardIcon, BuildingIcon, CalendarOffIcon, CreditCardIcon, MonitorIcon, LogOutIcon, MenuIcon, XIcon } from 'lucide-react';
+import { LayoutDashboardIcon, BuildingIcon, CalendarOffIcon, CreditCardIcon, MonitorIcon, LogOutIcon, MenuIcon, XIcon, UserIcon } from 'lucide-react';
 const AdminLayout = ({
   user,
   onLogout,
@@ -22,15 +22,34 @@ const AdminLayout = ({
     icon: <CalendarOffIcon className="w-5 h-5" />
   }, {
     path: '/admin/credits',
-    label: 'Credit Management',
+    label: 'User Management',
     icon: <CreditCardIcon className="w-5 h-5" />
   }, {
     path: '/admin/monitor',
     label: 'Booking Monitor',
     icon: <MonitorIcon className="w-5 h-5" />
+  }, {
+    path: '/admin/profile',
+    label: 'My Profile',
+    icon: <UserIcon className="w-5 h-5" />
   }];
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  // Determine account status for UI indicators
+  const getAccountStatusClass = () => {
+    if (user?.isFirstLogin) {
+      return 'bg-gray-200'; // Unactivated - grey background
+    }
+    return ''; // Default - no special styling
+  };
+  // Determine status indicator dot
+  const getStatusDot = () => {
+    if (user?.isFirstLogin) {
+      return null; // No dot for unactivated accounts
+    }
+    // For demo purposes, we'll consider the user is always active when logged in
+    return <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-white" />;
   };
   return <div className="flex h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
@@ -50,7 +69,15 @@ const AdminLayout = ({
             </div>
             <div className="flex-shrink-0 p-4 border-t border-gray-200">
               <div className="flex items-center">
-                <div>
+                <div className="relative">
+                  <div className={`flex-shrink-0 h-10 w-10 rounded-full ${getAccountStatusClass()} flex items-center justify-center bg-purple-100`}>
+                    <span className="text-purple-800 font-medium">
+                      {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'A'}
+                    </span>
+                    {getStatusDot()}
+                  </div>
+                </div>
+                <div className="ml-3">
                   <div className="text-sm font-medium text-gray-900">
                     {user?.name}
                   </div>
@@ -102,7 +129,15 @@ const AdminLayout = ({
               </nav>
               <div className="flex-shrink-0 p-4 border-t border-gray-200">
                 <div className="flex items-center">
-                  <div>
+                  <div className="relative">
+                    <div className={`flex-shrink-0 h-10 w-10 rounded-full ${getAccountStatusClass()} flex items-center justify-center bg-purple-100`}>
+                      <span className="text-purple-800 font-medium">
+                        {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'A'}
+                      </span>
+                      {getStatusDot()}
+                    </div>
+                  </div>
+                  <div className="ml-3">
                     <div className="text-sm font-medium text-gray-900">
                       {user?.name}
                     </div>

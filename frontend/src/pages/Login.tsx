@@ -23,7 +23,30 @@ const Login = ({
           id: '1',
           name: 'John Doe',
           role: 'user',
-          credits: 100
+          credits: 100,
+          email: 'john.doe@example.com',
+          department: 'Engineering',
+          username: 'user',
+          lastLogin: new Date().toISOString(),
+          totalBookings: 15,
+          isFirstLogin: false,
+          accountStatus: 'active'
+        };
+        onLogin(userData);
+        navigate('/user/dashboard');
+      } else if (username === 'newuser' && password === 'password') {
+        const userData = {
+          id: '3',
+          name: 'New User',
+          role: 'user',
+          credits: 50,
+          email: 'new.user@example.com',
+          department: 'Marketing',
+          username: 'newuser',
+          lastLogin: null,
+          totalBookings: 0,
+          isFirstLogin: true,
+          accountStatus: 'unactivated'
         };
         onLogin(userData);
         navigate('/user/dashboard');
@@ -31,7 +54,27 @@ const Login = ({
         const userData = {
           id: '2',
           name: 'Admin User',
-          role: 'admin'
+          role: 'admin',
+          email: 'admin@example.com',
+          username: 'admin',
+          lastLogin: new Date().toISOString(),
+          organization: 'Main University',
+          isFirstLogin: false,
+          accountStatus: 'active'
+        };
+        onLogin(userData);
+        navigate('/admin/dashboard');
+      } else if (username === 'newadmin' && password === 'password') {
+        const userData = {
+          id: '4',
+          name: 'New Admin',
+          role: 'admin',
+          email: 'newadmin@example.com',
+          username: 'newadmin',
+          lastLogin: null,
+          organization: 'Engineering Faculty',
+          isFirstLogin: true,
+          accountStatus: 'unactivated'
         };
         onLogin(userData);
         navigate('/admin/dashboard');
@@ -103,10 +146,15 @@ const Login = ({
                 </span>
               </div>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            <div className="mt-6 grid grid-cols-3 gap-3">
               <div className="bg-gray-50 p-2 rounded text-xs text-center">
                 <p className="font-semibold">Normal User</p>
                 <p>Username: user</p>
+                <p>Password: password</p>
+              </div>
+              <div className="bg-gray-50 p-2 rounded text-xs text-center">
+                <p className="font-semibold">New User</p>
+                <p>Username: newuser</p>
                 <p>Password: password</p>
               </div>
               <div className="bg-gray-50 p-2 rounded text-xs text-center">

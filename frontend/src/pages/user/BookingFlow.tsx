@@ -6,6 +6,7 @@ import SearchFilters from '../../components/SearchFilters';
 import FacilityCard from '../../components/FacilityCard';
 import QRCodeDisplay from '../../components/QRCodeDisplay';
 import CalendarBookingView from '../../components/CalendarBookingView';
+import CoBookerSearch, { CoBooker } from '../../components/CoBookerSearch';
 // Mock data
 const mockFacilities = [{
   id: 1,
@@ -111,6 +112,7 @@ const BookingFlow = ({
   const [selectedEndTime, setSelectedEndTime] = useState('');
   const [duration, setDuration] = useState(1);
   const [booking, setBooking] = useState(null);
+  const [coBookers, setCoBookers] = useState<CoBooker[]>([]);
   const [filters, setFilters] = useState({
     searchTerm: '',
     facilityType: '',
@@ -197,6 +199,9 @@ const BookingFlow = ({
     setSelectedEndTime(endTime);
     setDuration(blockDuration);
   };
+  const handleCoBookersChange = (updatedCoBookers: CoBooker[]) => {
+    setCoBookers(updatedCoBookers);
+  };
   const handleConfirmBooking = () => {
     if (!selectedStartTime || !selectedEndTime) {
       alert('Please select a time slot by creating a time block on the calendar.');
@@ -205,6 +210,9 @@ const BookingFlow = ({
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
+      const acceptedCoBookers = coBookers.filter(coBooker => coBooker.status === 'accepted');
+      const totalParticipants = acceptedCoBookers.length + 1; // +1 for the main booker
+      const creditCostPerPerson = Math.ceil(selectedFacility.creditCost * duration / totalParticipants);
       const newBooking = {
         id: `booking-${Date.now()}`,
         facilityId: selectedFacility.id,
@@ -215,7 +223,10 @@ const BookingFlow = ({
         endTime: selectedEndTime,
         bookingType,
         status: 'confirmed',
-        creditCost: selectedFacility.creditCost * duration
+        creditCost: selectedFacility.creditCost * duration,
+        creditCostPerPerson,
+        coBookers,
+        totalParticipants
       };
       setBooking(newBooking);
       setCurrentStep(3);
@@ -339,6 +350,8 @@ const BookingFlow = ({
             {isLoading ? <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div> : <CalendarBookingView facility={selectedFacility} existingBookings={existingBookings} onTimeBlockSelect={handleTimeBlockSelect} selectedDate={selectedDate} onDateChange={setSelectedDate} />}
+            {/* Co-Booker Search Component */}
+            {selectedStartTime && selectedEndTime && <CoBookerSearch onCoBookersChange={handleCoBookersChange} facilityCapacity={selectedFacility.capacity} />}
             {selectedStartTime && selectedEndTime && <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
                 <div className="p-4 sm:p-6">
                   <h4 className="text-lg font-medium text-gray-900 mb-4">
@@ -373,12 +386,25 @@ const BookingFlow = ({
                         {bookingType}
                       </span>
                     </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Co-Bookers:</span>
+                      <span className="text-gray-900">
+                        {coBookers.length > 0 ? `${coBookers.length} invited (${coBookers.filter(c => c.status === 'accepted').length} accepted)` : 'None'}
+                      </span>
+                    </div>
                     <div className="flex justify-between text-sm font-medium">
                       <span className="text-gray-900">Total Credits:</span>
                       <span className="text-blue-600">
                         {selectedFacility.creditCost * duration} credits
                       </span>
                     </div>
+                    {coBookers.filter(c => c.status === 'accepted').length > 0 && <div className="flex justify-between text-sm font-medium">
+                        <span className="text-gray-900">Your Share:</span>
+                        <span className="text-green-600">
+                          {Math.ceil(selectedFacility.creditCost * duration / (coBookers.filter(c => c.status === 'accepted').length + 1))}{' '}
+                          credits
+                        </span>
+                      </div>}
                   </div>
                 </div>
               </div>}
@@ -469,7 +495,7 @@ const BookingFlow = ({
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-500">
-                          Credits Used
+                          Total Credits
                         </dt>
                         <dd className="mt-1 text-sm font-medium text-blue-600">
                           {booking.creditCost} credits
@@ -477,15 +503,23 @@ const BookingFlow = ({
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-500">
+                          Your Credit Share
+                        </dt>
+                        <dd className="mt-1 text-sm font-medium text-green-600">
+                          {booking.creditCostPerPerson} credits
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">
                           Remaining Credits
                         </dt>
                         <dd className="mt-1 text-sm font-medium text-blue-600">
-                          {user.credits - booking.creditCost} credits
+                          {user.credits - booking.creditCostPerPerson} credits
                         </dd>
                       </div>
                     </dl>
                   </div>
-                  <div className="flex flex-col items-center justify-center">
+                  <div className="flex flex-col">
                     <h4 className="text-sm font-medium text-gray-900 mb-3">
                       Check-in QR Code
                     </h4>
@@ -497,6 +531,28 @@ const BookingFlow = ({
                       Remember to check in within 15 minutes of your booking
                       start time.
                     </p>
+                    {booking.coBookers && booking.coBookers.length > 0 && <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">
+                          Co-Bookers (
+                          {booking.coBookers.filter(c => c.status === 'accepted').length}{' '}
+                          of {booking.coBookers.length} accepted)
+                        </h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {booking.coBookers.map(coBooker => <div key={coBooker.id} className={`flex items-center justify-between p-2 rounded-md ${coBooker.status === 'pending' ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'}`}>
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center">
+                                  <UserIcon className="h-3 w-3 text-gray-500" />
+                                </div>
+                                <p className="ml-2 text-xs font-medium text-gray-900">
+                                  {coBooker.name}
+                                </p>
+                              </div>
+                              <span className={`text-xs ${coBooker.status === 'pending' ? 'text-yellow-700' : 'text-green-700'}`}>
+                                {coBooker.status === 'pending' ? 'Pending' : 'Accepted'}
+                              </span>
+                            </div>)}
+                        </div>
+                      </div>}
                   </div>
                 </div>
               </div>
@@ -512,6 +568,7 @@ const BookingFlow = ({
               setSelectedEndTime('');
               setDuration(1);
               setBooking(null);
+              setCoBookers([]);
             }} className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 Book Another Facility
               </button>

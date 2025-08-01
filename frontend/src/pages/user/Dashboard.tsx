@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CalendarIcon, ClockIcon, ChevronRightIcon, AlertCircleIcon, CalendarPlusIcon, TrashIcon } from 'lucide-react';
 import UserLayout from '../../components/UserLayout';
 import FacilityCard from '../../components/FacilityCard';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 // Mock data
 const mockFacilities = [{
   id: 1,
@@ -76,12 +77,14 @@ const mockReleasedRooms = [{
 }];
 const Dashboard = ({
   user,
-  onLogout
+  onLogout,
+  updateUser
 }) => {
   const [popularFacilities, setPopularFacilities] = useState([]);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [releasedRooms, setReleasedRooms] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFirstTimeLoginModalOpen, setIsFirstTimeLoginModalOpen] = useState(false);
   useEffect(() => {
     // Simulate API call
     setTimeout(() => {
@@ -89,8 +92,12 @@ const Dashboard = ({
       setUpcomingBookings(mockUpcomingBookings);
       setReleasedRooms(mockReleasedRooms);
       setIsLoading(false);
+      // Check if this is a first-time login
+      if (user && user.isFirstLogin) {
+        setIsFirstTimeLoginModalOpen(true);
+      }
     }, 1000);
-  }, []);
+  }, [user]);
   const formatDateTime = (date, time) => {
     const dateObj = new Date(`${date}T${time}`);
     return dateObj.toLocaleString('en-US', {
@@ -108,6 +115,31 @@ const Dashboard = ({
       setUpcomingBookings(upcomingBookings.filter(booking => booking.id !== bookingId));
       setIsLoading(false);
     }, 1000);
+  };
+  const handlePasswordChange = async (oldPassword, newPassword) => {
+    // Simulate API call to change password
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // In a real app, you'd make an API call here
+        console.log('Password changed from', oldPassword, 'to', newPassword);
+        // Check if new password is the same as old password
+        if (newPassword === oldPassword || user && newPassword === user.password) {
+          reject(new Error('New password cannot be the same as your current password'));
+          return;
+        }
+        // Update user's first login status
+        if (user && user.isFirstLogin) {
+          // Update the user state in the parent component
+          updateUser({
+            isFirstLogin: false,
+            password: newPassword // Store new password (in a real app, you wouldn't do this)
+          });
+          // Close the modal
+          setIsFirstTimeLoginModalOpen(false);
+        }
+        resolve();
+      }, 1500);
+    });
   };
   return <UserLayout user={user} onLogout={onLogout}>
       <div className="pb-5 border-b border-gray-200">
@@ -302,6 +334,8 @@ const Dashboard = ({
             </div>
           </div>
         </div>}
+      {/* First-time login password change modal */}
+      <ChangePasswordModal isOpen={isFirstTimeLoginModalOpen} onClose={() => setIsFirstTimeLoginModalOpen(false)} onSubmit={handlePasswordChange} isFirstTimeLogin={true} currentPassword={user?.password || 'password'} />
     </UserLayout>;
 };
 export default Dashboard;

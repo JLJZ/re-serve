@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { SearchIcon, PlusIcon, MinusIcon, RefreshCwIcon, CreditCardIcon, UsersIcon, XIcon, ChevronRightIcon, ChevronLeftIcon } from 'lucide-react';
+import { SearchIcon, PlusIcon, MinusIcon, RefreshCwIcon, CreditCardIcon, UsersIcon, XIcon, ChevronRightIcon, ChevronLeftIcon, TrashIcon, UserPlusIcon } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 // Mock data
 const mockUsers = [{
@@ -9,7 +9,10 @@ const mockUsers = [{
   role: 'user',
   credits: 100,
   lastLogin: '2023-09-12T14:30:00',
-  totalBookings: 15
+  totalBookings: 15,
+  isFirstLogin: false,
+  faculty: 'Engineering',
+  username: 'johndoe'
 }, {
   id: 2,
   name: 'Jane Smith',
@@ -17,7 +20,10 @@ const mockUsers = [{
   role: 'user',
   credits: 75,
   lastLogin: '2023-09-13T09:45:00',
-  totalBookings: 8
+  totalBookings: 8,
+  isFirstLogin: false,
+  faculty: 'Marketing',
+  username: 'janesmith'
 }, {
   id: 3,
   name: 'Alex Johnson',
@@ -25,7 +31,10 @@ const mockUsers = [{
   role: 'user',
   credits: 50,
   lastLogin: '2023-09-10T16:20:00',
-  totalBookings: 12
+  totalBookings: 12,
+  isFirstLogin: true,
+  faculty: 'Finance',
+  username: 'alexjohnson'
 }, {
   id: 4,
   name: 'Sarah Williams',
@@ -33,7 +42,10 @@ const mockUsers = [{
   role: 'user',
   credits: 120,
   lastLogin: '2023-09-11T11:15:00',
-  totalBookings: 20
+  totalBookings: 20,
+  isFirstLogin: false,
+  faculty: 'HR',
+  username: 'sarahwilliams'
 }, {
   id: 5,
   name: 'Michael Brown',
@@ -41,7 +53,10 @@ const mockUsers = [{
   role: 'user',
   credits: 30,
   lastLogin: '2023-09-08T10:30:00',
-  totalBookings: 5
+  totalBookings: 5,
+  isFirstLogin: true,
+  faculty: 'Sales',
+  username: 'michaelbrown'
 }];
 const mockCreditHistory = [{
   id: 'c1',
@@ -80,6 +95,8 @@ const mockCreditHistory = [{
   date: '2023-09-10T16:30:00',
   adminName: null
 }];
+// Available faculties for new users
+const faculties = ['Engineering', 'Marketing', 'Finance', 'HR', 'Sales', 'Design', 'Product', 'Operations', 'Customer Support', 'Research'];
 const UserCreditManager = ({
   user,
   onLogout
@@ -97,6 +114,16 @@ const UserCreditManager = ({
   const [usersPerPage] = useState(5);
   const [activeTab, setActiveTab] = useState('users');
   const [errors, setErrors] = useState({});
+  const [isCreateUserModalOpen, setIsCreateUserModalOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    username: '',
+    faculty: '',
+    credits: 50
+  });
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
   useEffect(() => {
     // Simulate API call
     setTimeout(() => {
@@ -109,7 +136,7 @@ const UserCreditManager = ({
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
-  const filteredUsers = users.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredUsers = users.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase()) || user.username.toLowerCase().includes(searchTerm.toLowerCase()) || user.faculty.toLowerCase().includes(searchTerm.toLowerCase()));
   const filteredHistory = creditHistory.filter(entry => entry.userName.toLowerCase().includes(searchTerm.toLowerCase()) || entry.reason.toLowerCase().includes(searchTerm.toLowerCase()));
   // Pagination
   const indexOfLastUser = currentPage * usersPerPage;
@@ -129,6 +156,28 @@ const UserCreditManager = ({
     setIsModalOpen(false);
     setSelectedUser(null);
   };
+  const openCreateUserModal = () => {
+    setNewUser({
+      name: '',
+      email: '',
+      username: '',
+      faculty: '',
+      credits: 50
+    });
+    setErrors({});
+    setIsCreateUserModalOpen(true);
+  };
+  const closeCreateUserModal = () => {
+    setIsCreateUserModalOpen(false);
+  };
+  const openDeleteModal = user => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setUserToDelete(null);
+  };
   const validateForm = () => {
     const newErrors = {};
     if (!creditAmount || isNaN(creditAmount) || Number(creditAmount) <= 0) {
@@ -136,6 +185,32 @@ const UserCreditManager = ({
     }
     if (!creditReason.trim()) {
       newErrors.creditReason = 'Please provide a reason';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+  const validateCreateUserForm = () => {
+    const newErrors = {};
+    if (!newUser.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    if (!newUser.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(newUser.email)) {
+      newErrors.email = 'Email is invalid';
+    } else if (users.some(u => u.email.toLowerCase() === newUser.email.toLowerCase())) {
+      newErrors.email = 'Email already exists';
+    }
+    if (!newUser.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (users.some(u => u.username.toLowerCase() === newUser.username.toLowerCase())) {
+      newErrors.username = 'Username already exists';
+    }
+    if (!newUser.faculty) {
+      newErrors.faculty = 'Faculty is required';
+    }
+    if (!newUser.credits || isNaN(newUser.credits) || Number(newUser.credits) < 0) {
+      newErrors.credits = 'Please enter a valid number of credits';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -176,7 +251,72 @@ const UserCreditManager = ({
       closeModal();
     }, 1000);
   };
+  const handleCreateUser = e => {
+    e.preventDefault();
+    if (!validateCreateUserForm()) {
+      return;
+    }
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      const newUserId = Math.max(...users.map(u => u.id)) + 1;
+      const createdUser = {
+        id: newUserId,
+        name: newUser.name,
+        email: newUser.email,
+        username: newUser.username,
+        faculty: newUser.faculty,
+        role: 'user',
+        credits: Number(newUser.credits),
+        lastLogin: null,
+        totalBookings: 0,
+        isFirstLogin: true
+      };
+      // Add user to the list
+      setUsers([...users, createdUser]);
+      // Add credit history entry for initial credit allocation
+      if (Number(newUser.credits) > 0) {
+        const newHistoryEntry = {
+          id: `c${Date.now()}`,
+          userId: newUserId,
+          userName: newUser.name,
+          amount: Number(newUser.credits),
+          type: 'addition',
+          reason: 'Initial credit allocation',
+          date: new Date().toISOString(),
+          adminName: user.name
+        };
+        setCreditHistory([newHistoryEntry, ...creditHistory]);
+      }
+      setIsLoading(false);
+      closeCreateUserModal();
+    }, 1000);
+  };
+  const handleDeleteUser = () => {
+    if (!userToDelete) return;
+    setIsLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      // Remove user from the list
+      setUsers(users.filter(u => u.id !== userToDelete.id));
+      // Remove user's credit history
+      setCreditHistory(creditHistory.filter(entry => entry.userId !== userToDelete.id));
+      setIsLoading(false);
+      closeDeleteModal();
+    }, 1000);
+  };
+  const handleNewUserInputChange = e => {
+    const {
+      name,
+      value
+    } = e.target;
+    setNewUser({
+      ...newUser,
+      [name]: value
+    });
+  };
   const formatDate = dateStr => {
+    if (!dateStr) return 'Never';
     const date = new Date(dateStr);
     return date.toLocaleString('en-US', {
       month: 'short',
@@ -189,7 +329,7 @@ const UserCreditManager = ({
   return <AdminLayout user={user} onLogout={onLogout}>
       <div className="pb-5 border-b border-gray-200">
         <h1 className="text-2xl font-bold leading-tight text-gray-900">
-          User Credit Management
+          User Management
         </h1>
       </div>
       <div className="mt-6">
@@ -213,11 +353,17 @@ const UserCreditManager = ({
                     </button>
                   </nav>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <SearchIcon className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center space-x-4">
+                  {activeTab === 'users' && <button onClick={openCreateUserModal} className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                      <UserPlusIcon className="h-4 w-4 mr-1" />
+                      Create User
+                    </button>}
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <SearchIcon className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input type="text" placeholder={activeTab === 'users' ? 'Search users...' : 'Search credit history...'} value={searchTerm} onChange={handleSearch} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" />
                   </div>
-                  <input type="text" placeholder={activeTab === 'users' ? 'Search users...' : 'Search credit history...'} value={searchTerm} onChange={handleSearch} className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm" />
                 </div>
               </div>
             </div>
@@ -230,8 +376,14 @@ const UserCreditManager = ({
                       No users found
                     </h3>
                     <p className="mt-1 text-sm text-gray-500">
-                      Try adjusting your search.
+                      Try adjusting your search or create a new user.
                     </p>
+                    <div className="mt-6">
+                      <button onClick={openCreateUserModal} className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                        <UserPlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                        Create User
+                      </button>
+                    </div>
                   </div> : <div className="mt-4">
                     <div className="overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
@@ -241,13 +393,16 @@ const UserCreditManager = ({
                               User
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Faculty
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Credits
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Last Login
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Total Bookings
+                              Status
                             </th>
                             <th scope="col" className="relative px-6 py-3">
                               <span className="sr-only">Actions</span>
@@ -268,10 +423,13 @@ const UserCreditManager = ({
                                       {user.name}
                                     </div>
                                     <div className="text-sm text-gray-500">
-                                      {user.email}
+                                      @{user.username} • {user.email}
                                     </div>
                                   </div>
                                 </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {user.faculty || '—'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm font-medium text-purple-600">
@@ -281,13 +439,22 @@ const UserCreditManager = ({
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {formatDate(user.lastLogin)}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {user.totalBookings}
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {user.isFirstLogin ? <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                    New Account
+                                  </span> : <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Active
+                                  </span>}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button onClick={() => openModal(user)} className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
-                                  Adjust Credits
-                                </button>
+                                <div className="flex justify-end space-x-2">
+                                  <button onClick={() => openModal(user)} className="text-purple-600 hover:text-purple-900">
+                                    Adjust Credits
+                                  </button>
+                                  <button onClick={() => openDeleteModal(user)} className="text-red-600 hover:text-red-900">
+                                    Delete
+                                  </button>
+                                </div>
                               </td>
                             </tr>)}
                         </tbody>
@@ -393,7 +560,7 @@ const UserCreditManager = ({
           </div>
         </div>
       </div>
-      {/* Modal */}
+      {/* Credit Adjustment Modal */}
       {isModalOpen && selectedUser && <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" aria-hidden="true">
@@ -498,6 +665,166 @@ const UserCreditManager = ({
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>}
+      {/* Create User Modal */}
+      {isCreateUserModalOpen && <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="absolute top-0 right-0 pt-4 pr-4">
+                <button type="button" onClick={closeCreateUserModal} className="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                  <span className="sr-only">Close</span>
+                  <XIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Create New User
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Fill in the details below to create a new user account.
+                        The user will be prompted to change their password on
+                        first login.
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <form onSubmit={handleCreateUser}>
+                        <div className="space-y-4">
+                          <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                              Full Name *
+                            </label>
+                            <div className="mt-1">
+                              <input type="text" name="name" id="name" value={newUser.name} onChange={handleNewUserInputChange} className={`shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md ${errors.name ? 'border-red-300' : ''}`} />
+                              {errors.name && <p className="mt-1 text-sm text-red-600">
+                                  {errors.name}
+                                </p>}
+                            </div>
+                          </div>
+                          <div>
+                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                              Username *
+                            </label>
+                            <div className="mt-1">
+                              <input type="text" name="username" id="username" value={newUser.username} onChange={handleNewUserInputChange} className={`shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md ${errors.username ? 'border-red-300' : ''}`} />
+                              {errors.username && <p className="mt-1 text-sm text-red-600">
+                                  {errors.username}
+                                </p>}
+                            </div>
+                          </div>
+                          <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                              Email Address *
+                            </label>
+                            <div className="mt-1">
+                              <input type="email" name="email" id="email" value={newUser.email} onChange={handleNewUserInputChange} className={`shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md ${errors.email ? 'border-red-300' : ''}`} />
+                              {errors.email && <p className="mt-1 text-sm text-red-600">
+                                  {errors.email}
+                                </p>}
+                            </div>
+                          </div>
+                          <div>
+                            <label htmlFor="faculty" className="block text-sm font-medium text-gray-700">
+                              Faculty *
+                            </label>
+                            <div className="mt-1">
+                              <select name="faculty" id="faculty" value={newUser.faculty} onChange={handleNewUserInputChange} className={`shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md ${errors.faculty ? 'border-red-300' : ''}`}>
+                                <option value="">Select a faculty</option>
+                                {faculties.map(faculty => <option key={faculty} value={faculty}>
+                                    {faculty}
+                                  </option>)}
+                              </select>
+                              {errors.faculty && <p className="mt-1 text-sm text-red-600">
+                                  {errors.faculty}
+                                </p>}
+                            </div>
+                          </div>
+                          <div>
+                            <label htmlFor="credits" className="block text-sm font-medium text-gray-700">
+                              Initial Credits
+                            </label>
+                            <div className="mt-1">
+                              <input type="number" name="credits" id="credits" min="0" value={newUser.credits} onChange={handleNewUserInputChange} className={`shadow-sm focus:ring-purple-500 focus:border-purple-500 block w-full sm:text-sm border-gray-300 rounded-md ${errors.credits ? 'border-red-300' : ''}`} />
+                              {errors.credits && <p className="mt-1 text-sm text-red-600">
+                                  {errors.credits}
+                                </p>}
+                            </div>
+                          </div>
+                          <div className="bg-yellow-50 p-3 rounded-md">
+                            <h4 className="text-sm font-medium text-yellow-800">
+                              Important Note
+                            </h4>
+                            <p className="mt-1 text-sm text-yellow-700">
+                              The user will be created with a default password
+                              of "password" and will be prompted to change it on
+                              first login.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                          <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:col-start-2 sm:text-sm">
+                            Create User
+                          </button>
+                          <button type="button" onClick={closeCreateUserModal} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>}
+      {/* Delete User Confirmation Modal */}
+      {isDeleteModalOpen && userToDelete && <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                    <TrashIcon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Delete User Account
+                    </h3>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">
+                        Are you sure you want to delete the account for{' '}
+                        <span className="font-medium">{userToDelete.name}</span>
+                        ? This action cannot be undone, and all associated
+                        bookings and credit history will be permanently removed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onClick={handleDeleteUser} className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                  Delete
+                </button>
+                <button type="button" onClick={closeDeleteModal} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                  Cancel
+                </button>
               </div>
             </div>
           </div>

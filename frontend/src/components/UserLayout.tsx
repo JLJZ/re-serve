@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboardIcon, CalendarIcon, ClockIcon, HistoryIcon, LogOutIcon, MenuIcon, XIcon } from 'lucide-react';
+import { LayoutDashboardIcon, CalendarIcon, ClockIcon, HistoryIcon, LogOutIcon, MenuIcon, XIcon, UsersIcon, UserIcon } from 'lucide-react';
 const UserLayout = ({
   user,
   onLogout,
@@ -21,12 +21,35 @@ const UserLayout = ({
     label: 'Released Rooms',
     icon: <ClockIcon className="w-5 h-5" />
   }, {
+    path: '/user/co-booking-requests',
+    label: 'Co-Booking Requests',
+    icon: <UsersIcon className="w-5 h-5" />
+  }, {
     path: '/user/history',
     label: 'Booking History',
     icon: <HistoryIcon className="w-5 h-5" />
+  }, {
+    path: '/user/profile',
+    label: 'My Profile',
+    icon: <UserIcon className="w-5 h-5" />
   }];
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+  // Determine account status for UI indicators
+  const getAccountStatusClass = () => {
+    if (user?.isFirstLogin) {
+      return 'bg-gray-200'; // Unactivated - grey background
+    }
+    return ''; // Default - no special styling
+  };
+  // Determine status indicator dot
+  const getStatusDot = () => {
+    if (user?.isFirstLogin) {
+      return null; // No dot for unactivated accounts
+    }
+    // For demo purposes, we'll consider the user is always active when logged in
+    return <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-white" />;
   };
   return <div className="flex h-screen bg-gray-50">
       {/* Sidebar - Desktop */}
@@ -48,7 +71,15 @@ const UserLayout = ({
             </div>
             <div className="flex-shrink-0 p-4 border-t border-gray-200">
               <div className="flex items-center">
-                <div>
+                <div className="relative">
+                  <div className={`flex-shrink-0 h-10 w-10 rounded-full ${getAccountStatusClass()} flex items-center justify-center bg-blue-100`}>
+                    <span className="text-blue-800 font-medium">
+                      {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                    </span>
+                    {getStatusDot()}
+                  </div>
+                </div>
+                <div className="ml-3">
                   <div className="text-sm font-medium text-gray-900">
                     {user?.name}
                   </div>
@@ -100,7 +131,15 @@ const UserLayout = ({
               </nav>
               <div className="flex-shrink-0 p-4 border-t border-gray-200">
                 <div className="flex items-center">
-                  <div>
+                  <div className="relative">
+                    <div className={`flex-shrink-0 h-10 w-10 rounded-full ${getAccountStatusClass()} flex items-center justify-center bg-blue-100`}>
+                      <span className="text-blue-800 font-medium">
+                        {user?.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                      </span>
+                      {getStatusDot()}
+                    </div>
+                  </div>
+                  <div className="ml-3">
                     <div className="text-sm font-medium text-gray-900">
                       {user?.name}
                     </div>

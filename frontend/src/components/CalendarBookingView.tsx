@@ -1,10 +1,18 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 // Setup the localizer for react-big-calendar
 const localizer = momentLocalizer(moment);
+// Custom current time indicator component
+const CustomTimeIndicator = ({
+  style
+}) => <div className="rbc-current-time-indicator" style={{
+  ...style,
+  backgroundColor: '#EF4444',
+  height: '2px' // Make it thicker
+}} />;
 // Custom toolbar component to match our design
 const CustomToolbar = ({
   onNavigate,
@@ -124,6 +132,15 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
   const [selectedEvent, setSelectedEvent] = useState(null);
   // State for calendar view (day, week)
   const [view, setView] = useState(Views.WEEK);
+  // State to force re-render for time indicator updates
+  const [now, setNow] = useState(new Date());
+  // Update the current time every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
   // Convert existing bookings to calendar events
   const events = useMemo(() => {
     const formattedEvents = formatBookingsToEvents(existingBookings, facility.name);
@@ -141,6 +158,13 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
     start,
     end
   }) => {
+    // Check if the selected time is in the past
+    const currentTime = new Date();
+    if (start < currentTime) {
+      // Display a message to the user
+      alert('Cannot book a time slot in the past. Please select a future time slot.');
+      return;
+    }
     // Check if the slot overlaps with any existing events
     const isOverlapping = events.some(event => {
       return start < event.end && end > event.start && event.resource !== 'selected';
@@ -169,6 +193,12 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
   const handleSelectEvent = useCallback(event => {
     // Only allow selecting available events
     if (event.resource === 'available') {
+      // Check if the selected time is in the past
+      const currentTime = new Date();
+      if (event.start < currentTime) {
+        alert('Cannot book a time slot in the past. Please select a future time slot.');
+        return;
+      }
       setSelectedEvent({
         ...event,
         resource: 'selected'
@@ -190,6 +220,12 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
   }) => {
     // Only allow resizing the selected event
     if (event.resource === 'selected') {
+      // Check if the resized time would be in the past
+      const currentTime = new Date();
+      if (start < currentTime) {
+        alert('Cannot resize a booking to start in the past.');
+        return;
+      }
       const updatedEvent = {
         ...event,
         start,
@@ -213,6 +249,12 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
   }) => {
     // Only allow moving the selected event
     if (event.resource === 'selected') {
+      // Check if the moved time would be in the past
+      const currentTime = new Date();
+      if (start < currentTime) {
+        alert('Cannot move a booking to start in the past.');
+        return;
+      }
       // Check if the move would overlap with any existing events
       const isOverlapping = events.some(existingEvent => {
         return existingEvent.id !== event.id && existingEvent.resource !== 'selected' && start < existingEvent.end && end > existingEvent.start;
@@ -248,14 +290,17 @@ const CalendarBookingView: React.FC<CalendarBookingViewProps> = ({
         </div>
         <div className="h-[600px]">
           <Calendar localizer={localizer} events={events} startAccessor="start" endAccessor="end" selectable resizable onSelectSlot={handleSelectSlot} onSelectEvent={handleSelectEvent} onEventResize={handleResizeEvent} onEventDrop={handleMoveEvent} defaultView={Views.WEEK} views={[Views.WEEK, Views.DAY]} step={15} timeslots={4} date={selectedDate} onNavigate={handleNavigate} onView={setView} view={view} eventPropGetter={eventStyleGetter} components={{
-          toolbar: CustomToolbar
+          toolbar: CustomToolbar,
+          timeIndicator: CustomTimeIndicator
         }} min={new Date(new Date().setHours(8, 0, 0))} max={new Date(new Date().setHours(22, 0, 0))} formats={{
           timeGutterFormat: 'h A',
           eventTimeRangeFormat: ({
             start,
             end
           }, culture, localizer) => `${localizer.format(start, 'h:mm A', culture)} - ${localizer.format(end, 'h:mm A', culture)}`
-        }} />
+        }} now={now} // Pass the current time to update the time indicator
+        showCurrentTimeIndicator={true} // Ensure the time indicator is shown
+        />
         </div>
         <div className="mt-4 flex flex-wrap gap-3">
           <div className="flex items-center">
