@@ -1,26 +1,22 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('node:path');
-const { BasicStrategy } = require('passport-http');
-const { findOne } = require('./backend/UserRepository');
+const passport = require('./backend/Auth');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.json());
+
 app.use("/assets", express.static(path.resolve(__dirname, "frontend", "dist", "assets")));
 
-app.get("/api/auth/login", (req, res) => {
-    passport.use(new BasicStrategy((username, password, done) => {
-            findOne(username, (err, user) => {
-                if(err) { return done(err); }
-                if(!user) { return done(null, false); }
-                if(!user.validPassword(password)) { return done(null, false); }
-
-                return done(null, user);
-            });
-        }
-    ));
-});
+// server.js or routes.js
+app.post('/api/auth/login',
+  passport.authenticate('local', { session: false }),
+  (req, res) => {
+    res.json({ message: 'Login successful', user: req.user });
+  }
+);
 
 app.get("/{*splat}", (req, res) => {
     return res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));

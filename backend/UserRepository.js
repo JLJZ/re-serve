@@ -3,11 +3,30 @@ const bcrypt = require('bcrypt');
 
 async function hashPassword(plainText) {
     const saltRounds = 10;
-    return bcrypt.genSalt(saltRounds, (err, salt) => {
-        bcrypt.hash(plainText, salt, (err, hash) => {
-            return hash;
-        })
-    });
+    return await bcrypt.hash(plainText, saltRounds);
+}
+
+async function findOneById({
+    id: id
+}) {
+    try {
+        const [user] = await sql`
+            SELECt * FROM users where id = ${id}`;
+        return user;
+    } catch(error) {
+        console.error(error);
+    }
+    finally {
+        await sql.end();
+    }
+}
+
+async function findOneByUsername(username) {
+    const [user] = await sql`
+        select * from users
+        where email = ${username};
+    `;
+    return user;
 }
 
 async function insertOne({
@@ -17,9 +36,10 @@ async function insertOne({
     school
 }) {
     const hashedPassword = await hashPassword(password);
+    console.log(hashedPassword);
     try {
         const result = await sql`
-            INSERT INTO users (name, email, password)
+            INSERT INTO users (name, email, password, faculty)
                 VALUES (${name}, ${email}, ${hashedPassword}, ${school})
                 RETURNING id;
         `;
@@ -27,23 +47,10 @@ async function insertOne({
     } catch(error) {
         console.error(error);
     }
-    finally {
-        await sql.end();
-    }
-}
-
-async function findOne({ username }) {
-    const user = await sql`
-        select
-            id,
-            username,
-            password,
-        from users
-        where username == ${username}
-    `;
-    return user;
 }
 
 module.exports = {
-    findOne
+    findOneById,
+    findOneByUsername,
+    insertOne
 }
