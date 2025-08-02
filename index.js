@@ -7,7 +7,7 @@ const { findOne } = require('./backend/UserRepository');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use("/assets", express.static(path.resolve(_-dirname, "frontend", "dist", "assets")));
+app.use("/assets", express.static(path.resolve(__dirname, "frontend", "dist", "assets")));
 
 app.get("/api/auth/login", (req, res) => {
     passport.use(new BasicStrategy((username, password, done) => {
