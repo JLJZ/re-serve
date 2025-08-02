@@ -16,6 +16,7 @@ export interface UserProfile {
     accountStatus: 'active' | 'inactive' | 'deactivated';
     isAdmin: boolean; //inferred 
 }
+//isfirstlogin
 
 async function fetchWithBasic<T>(url: string, credentials: string, loginType: string): Promise<T> {
   const res = await fetch(url, {
