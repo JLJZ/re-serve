@@ -50,7 +50,7 @@ const SearchFilters = ({
             </button>
           </div>
           <div className={`${isExpanded || window.innerWidth >= 768 ? 'block' : 'hidden'} md:block`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label htmlFor="facilityType" className="block text-sm font-medium text-gray-700 mb-1">
                   Facility Type
@@ -69,15 +69,20 @@ const SearchFilters = ({
                 <input type="date" id="date" name="date" value={filters.date} onChange={handleInputChange} className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm" />
               </div>
               <div>
-                <label htmlFor="timeSlot" className="block text-sm font-medium text-gray-700 mb-1">
-                  Time Slot
+                <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Time
                 </label>
-                <select id="timeSlot" name="timeSlot" value={filters.timeSlot} onChange={handleInputChange} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                  <option value="">Any Time</option>
-                  <option value="morning">Morning (8AM - 12PM)</option>
-                  <option value="afternoon">Afternoon (12PM - 5PM)</option>
-                  <option value="evening">Evening (5PM - 10PM)</option>
-                </select>
+                <div className="mt-1">
+                  <input type="time" name="startTime" id="startTime" value={filters.startTime} onChange={handleInputChange} className={`block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm`} />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">
+                  End Time
+                </label>
+                <div className="mt-1">
+                  <input type="time" name="endTime" id="endTime" value={filters.endTime} onChange={handleInputChange} className={`block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm`} />
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap gap-4 mb-4">

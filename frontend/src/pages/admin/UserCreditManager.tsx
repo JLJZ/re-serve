@@ -96,7 +96,7 @@ const mockCreditHistory = [{
   adminName: null
 }];
 // Available faculties for new users
-const faculties = ['Engineering', 'Marketing', 'Finance', 'HR', 'Sales', 'Design', 'Product', 'Operations', 'Customer Support', 'Research'];
+const faculties = ['Computing', 'Marketing', 'Finance', 'HR', 'Sales', 'Design', 'Product', 'Operations', 'Customer Support', 'Research'];
 const UserCreditManager = ({
   user,
   onLogout
