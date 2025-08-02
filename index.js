@@ -7,11 +7,7 @@ const { findOne } = require('./backend/UserRepository');
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use("/assets", express.static(path.resolve("./frontend/dist/assets")));
-
-app.get("/{*splat}", (req, res) => {
-    return res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
-});
+app.use("/assets", express.static(path.resolve(_-dirname, "frontend", "dist", "assets")));
 
 app.get("/api/auth/login", (req, res) => {
     passport.use(new BasicStrategy((username, password, done) => {
@@ -24,6 +20,10 @@ app.get("/api/auth/login", (req, res) => {
             });
         }
     ));
+});
+
+app.get("/{*splat}", (req, res) => {
+    return res.sendFile(path.resolve(__dirname, "frontend", "dist", "index.html"));
 });
 
 app.listen(port, (req, res) => {
